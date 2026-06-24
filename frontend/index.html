@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeMirror - Code Review Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #e8f0fe;
+            color: #0a1a3a;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ============================================================
+           HEADER
+           ============================================================ */
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid #1a4a8a;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            color: #0a2a6a;
+            text-shadow: 0 2px 8px rgba(26, 74, 138, 0.15);
+        }
+
+        .header h1 span {
+            color: #1a5aaa;
+        }
+
+        .header p {
+            color: #2a5a8a;
+            font-size: 16px;
+            margin-top: 8px;
+        }
+
+        /* ============================================================
+           EDITOR SECTION
+           ============================================================ */
+        .editor-section {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #b0cce8;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(26, 74, 138, 0.08);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .toolbar label {
+            color: #2a5a8a;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .toolbar select {
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 1px solid #b0cce8;
+            background: #e8f0fe;
+            color: #0a1a3a;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .toolbar select:focus {
+            outline: none;
+            border-color: #1a5aaa;
+            box-shadow: 0 0 0 3px rgba(26, 90, 170, 0.15);
+        }
+
+        .toolbar button {
+            padding: 10px 25px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, #0a2a6a, #1a5aaa);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(26, 74, 138, 0.25);
+        }
+
+        .toolbar button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(26, 74, 138, 0.35);
+            background: linear-gradient(135deg, #0a3a7a, #2a6aba);
+        }
+
+        .toolbar button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading-text {
+            color: #1a5aaa;
+            font-style: italic;
+            margin-left: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* ============================================================
+           TEXTAREA
+           ============================================================ */
+        textarea {
+            width: 100%;
+            height: 300px;
+            background: #e8f0fe;
+            color: #0a1a3a;
+            border: 1px solid #b0cce8;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            line-height: 1.6;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #1a5aaa;
+            box-shadow: 0 0 0 3px rgba(26, 90, 170, 0.1);
+        }
+
+        textarea::placeholder {
+            color: #7a9ac0;
+        }
+
+        /* ============================================================
+           RESULTS SECTION
+           ============================================================ */
+        .results {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #b0cce8;
+            margin-top: 20px;
+            box-shadow: 0 4px 16px rgba(26, 74, 138, 0.08);
+        }
+
+        .results h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #0a1a3a;
+        }
+
+        /* ============================================================
+           QUALITY SCORE
+           ============================================================ */
+        .score-container {
+            text-align: center;
+            padding: 20px;
+            background: #e8f0fe;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #b0cce8;
+        }
+
+        .score-number {
+            font-size: 56px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #0a2a6a, #1a5aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .score-label {
+            color: #2a5a8a;
+            font-size: 14px;
+        }
+
+        /* ============================================================
+           STATUS
+           ============================================================ */
+        .status {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .status-clean {
+            color: #1a7a3a;
+            background: #e8f5ee;
+            border: 1px solid #2a8a4e;
+        }
+
+        .status-warning {
+            color: #b8860b;
+            background: #fdf8ee;
+            border: 1px solid #d4a017;
+        }
+
+        .status-critical {
+            color: #b22222;
+            background: #fdeeee;
+            border: 1px solid #dc3545;
+        }
+
+        .status-message {
+            text-align: center;
+            color: #2a5a8a;
+            margin-bottom: 15px;
+        }
+
+        /* ============================================================
+           ISSUES
+           ============================================================ */
+        .issues-section {
+            margin-top: 15px;
+        }
+
+        .issues-section h4 {
+            color: #0a1a3a;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .issue {
+            padding: 12px 15px;
+            margin: 6px 0;
+            background: #e8f0fe;
+            border-radius: 8px;
+            border-left: 4px solid #d4a017;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #0a1a3a;
+        }
+
+        .issue-security {
+            border-left-color: #dc3545;
+            background: #fdf0f0;
+        }
+
+        .issue-info {
+            border-left-color: #1a5aaa;
+            background: #e8f0fe;
+        }
+
+        /* ============================================================
+           SUGGESTIONS
+           ============================================================ */
+        .suggestions-section {
+            margin-top: 15px;
+        }
+
+        .suggestions-section h4 {
+            color: #0a1a3a;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .suggestion {
+            padding: 10px 15px;
+            margin: 5px 0;
+            background: #e8f0fe;
+            border-radius: 8px;
+            color: #0a2a6a;
+            font-size: 14px;
+            border-left: 4px solid #1a5aaa;
+        }
+
+        /* ============================================================
+           SUMMARY
+           ============================================================ */
+        .summary-section {
+            margin-top: 15px;
+        }
+
+        .summary-section h4 {
+            color: #0a1a3a;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .summary-box {
+            background: #e8f0fe;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            color: #2a5a8a;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            border: 1px solid #b0cce8;
+        }
+
+        /* ============================================================
+           DIVIDER
+           ============================================================ */
+        .divider {
+            border: none;
+            border-top: 1px solid #b0cce8;
+            margin: 20px 0;
+        }
+
+        /* ============================================================
+           ERROR
+           ============================================================ */
+        .error-box {
+            background: #fdeeee;
+            color: #b22222;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #f5baba;
+        }
+
+        /* ============================================================
+           EMPTY STATE
+           ============================================================ */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #2a5a8a;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .empty-state h3 {
+            color: #0a1a3a;
+            margin-bottom: 8px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .features-grid .feature {
+            background: #e8f0fe;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #b0cce8;
+            font-size: 14px;
+            color: #0a1a3a;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            textarea {
+                height: 200px;
+            }
+
+            .score-number {
+                font-size: 36px;
+            }
+
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- ============================================================
+        HEADER
+        ============================================================ -->
+        <div class="header">
+            <h1>🔵 <span>Code</span>Mirror</h1>
+            <p>AI-Powered Code Review Assistant</p>
+        </div>
+
+        <!-- ============================================================
+        EDITOR SECTION
+        ============================================================ -->
+        <div class="editor-section">
+            <div class="toolbar">
+                <label for="language">Language:</label>
+                <select id="language">
+                    <option value="java">Java</option>
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="typescript">TypeScript</option>
+                    <option value="c">C</option>
+                    <option value="cpp">C++</option>
+                </select>
+
+                <button onclick="analyzeCode()">🚀 Analyze Code</button>
+                <span id="loadingText" class="loading-text hidden">⏳ Analyzing...</span>
+            </div>
+
+            <textarea id="codeInput" placeholder="Paste your code here...">public class Calculator {
+    public int divide(int a, int b) {
+        return a / b;
+    }
+
+    public void login() {
+        String password = "admin123";
+        System.out.println("Logged in!");
+    }
+}</textarea>
+        </div>
+
+        <!-- ============================================================
+        RESULTS SECTION
+        ============================================================ -->
+        <div id="resultsContainer" class="hidden">
+            <div class="results" id="resultsContent">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+
+        <!-- ============================================================
+        EMPTY STATE
+        ============================================================ -->
+        <div id="emptyState" class="results">
+            <div class="empty-state">
+                <div class="icon">🔷</div>
+                <h3>Waiting for Code</h3>
+                <p>Paste your code in the editor and click "Analyze Code"</p>
+                <div class="features-grid">
+                    <div class="feature">✅ Bug Detection</div>
+                    <div class="feature">🔒 Security Scanning</div>
+                    <div class="feature">📊 Quality Score</div>
+                    <div class="feature">💡 Smart Suggestions</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ============================================================
+    JAVASCRIPT
+    ============================================================ -->
+    <script>
+        async function analyzeCode() {
+            const code = document.getElementById('codeInput').value;
+            const language = document.getElementById('language').value;
+            const analyzeBtn = document.querySelector('button');
+            const loadingText = document.getElementById('loadingText');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            if (!code.trim()) {
+                alert('🔵 Please paste some code to analyze!');
+                return;
+            }
+
+            analyzeBtn.disabled = true;
+            loadingText.classList.remove('hidden');
+            resultsContainer.classList.add('hidden');
+
+            try {
+                const response = await fetch('http://localhost:8080/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ code, language }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                emptyState.style.display = 'none';
+                resultsContainer.classList.remove('hidden');
+                renderResults(data);
+
+            } catch (error) {
+                resultsContainer.classList.remove('hidden');
+                document.getElementById('resultsContent').innerHTML = `
+                    <div class="error-box">
+                        ❌ Failed to analyze code. Make sure the backend is running on port 8080.
+                    </div>
+                `;
+            } finally {
+                analyzeBtn.disabled = false;
+                loadingText.classList.add('hidden');
+            }
+        }
+
+        function renderResults(data) {
+            const container = document.getElementById('resultsContent');
+
+            let statusClass = 'status-clean';
+            if (data.status && data.status.includes('CRITICAL')) {
+                statusClass = 'status-critical';
+            } else if (data.status && data.status.includes('Issues')) {
+                statusClass = 'status-warning';
+            }
+
+            let html = `
+                <div class="score-container">
+                    <div class="score-number">${data.qualityScore || 0}/100</div>
+                    <div class="score-label">Quality Score</div>
+                </div>
+
+                <div class="status ${statusClass}">
+                    ${data.status || '✅ Analysis complete!'}
+                </div>
+                <div class="status-message">
+                    ${data.message || 'No issues found. Great job!'}
+                </div>
+
+                <hr class="divider">
+            `;
+
+            if (data.issues && data.issues.length > 0) {
+                html += `
+                    <div class="issues-section">
+                        <h4>⚠️ Issues (${data.issues.length})</h4>
+                        ${data.issues.map(issue => `
+                            <div class="issue">${issue}</div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            if (data.securityIssues && data.securityIssues.length > 0) {
+                html += `
+                    <div class="issues-section">
+                        <h4>🔴 Security Issues (${data.securityIssues.length})</h4>
+                        ${data.securityIssues.map(issue => `
+                            <div class="issue issue-security">${issue}</div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            if (data.suggestions && data.suggestions.length > 0) {
+                html += `
+                    <div class="suggestions-section">
+                        <h4>💡 Suggestions</h4>
+                        ${data.suggestions.map(suggestion => `
+                            <div class="suggestion">🔷 ${suggestion}</div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            if (data.summary) {
+                html += `
+                    <div class="summary-section">
+                        <h4>📊 Summary</h4>
+                        <div class="summary-box">${data.summary}</div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        document.getElementById('codeInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                analyzeCode();
+            }
+        });
+
+        console.log('🔵 CodeMirror Frontend loaded!');
+        console.log('💡 Press Ctrl+Enter to analyze code');
+    </script>
+
+</body>
+</html>
