@@ -1,32 +1,26 @@
-# 🔍 CodeMirror - AI Code Analysis & Security Scanner
+# 🔍 CodeMirror
 
-> Intelligent code review, bug detection, and security analysis platform for modern developers.
+### AI-Powered Code Analysis, Security Scanning & Quality Assessment Platform
 
-CodeMirror is an AI-inspired static code analysis platform designed to automatically detect bugs, security vulnerabilities, code smells, and maintainability issues while generating actionable recommendations and quality scores.
+CodeMirror is a production-ready code analysis platform designed to help developers identify bugs, security vulnerabilities, code smells, and maintainability issues before they reach production.
 
-The platform combines rule-based analysis, security scanning, and quality assessment into a single developer-friendly dashboard that helps teams write cleaner, safer, and more maintainable code.
+The platform combines static analysis, security scanning, quality scoring, and intelligent recommendations into a single developer-friendly dashboard that supports multiple programming languages and local execution.
 
 ---
 
 ## 📖 Overview
 
-CodeMirror helps developers improve software quality through automated inspection and intelligent recommendations.
+CodeMirror improves software quality through automated inspection and intelligent feedback.
 
-The system analyzes source code to identify bugs, risky coding practices, security vulnerabilities, and maintainability concerns while generating detailed reports and quality metrics.
+The system analyzes source code to detect:
 
-Whether you're a student, developer, or software engineer, CodeMirror provides valuable insights that improve productivity and code reliability.
+- Bugs and risky coding patterns
+- Security vulnerabilities
+- Code smells and maintainability issues
+- Performance concerns
+- Industry best-practice violations
 
----
-
-## 🏗️ The Technology Behind It
-
-| Component       | Technology              | Purpose                                |
-| --------------- | ----------------------- | -------------------------------------- |
-| Backend         | Java + Spring Boot      | Handles API requests and code analysis |
-| Analysis Engine | Custom Java Logic       | Detects bugs and security issues       |
-| Frontend        | HTML + CSS + JavaScript | Provides modern user interface         |
-| Build Tool      | Maven                   | Dependency management and builds       |
-| Server          | Embedded Tomcat         | Runs application locally               |
+The result is a detailed analysis report containing quality scores, security ratings, detected issues, and actionable suggestions.
 
 ---
 
@@ -34,42 +28,42 @@ Whether you're a student, developer, or software engineer, CodeMirror provides v
 
 ### 🐛 Bug Detection
 
-Detects 15+ common programming issues including:
+Automatically detects common programming issues including:
 
-* Division by zero
-* Infinite loops
-* Empty catch blocks
-* Magic numbers
-* Print statements in production code
-* Too many method parameters
-* Unused variables
-* Code smells
-* Maintainability issues
+- Division by zero
+- Infinite loops
+- Empty catch blocks
+- Magic numbers
+- Print statements in production code
+- Too many method parameters
+- Unused variables
+- Code smells
+- Maintainability issues
 
 ---
 
 ### 🔒 Security Scanning
 
-Identifies critical security vulnerabilities such as:
+Identify critical security vulnerabilities including:
 
-* Hardcoded passwords
-* SQL Injection vulnerabilities
-* Hardcoded API keys
-* Hardcoded URLs
-* Stack trace exposure
-* Unsafe coding practices
+- Hardcoded passwords
+- SQL Injection vulnerabilities
+- Hardcoded API keys
+- Hardcoded URLs
+- Stack trace exposure
+- Unsafe coding practices
 
 ---
 
 ### 📊 Quality Metrics
 
-Generate intelligent quality insights including:
+Every analysis generates:
 
-* Quality Score (0-100)
-* Issue Count and Severity Levels
-* Security Risk Analysis
-* Smart Improvement Suggestions
-* Detailed Analysis Summary
+- Quality Score (0-100)
+- Issue Count and Severity Levels
+- Security Issue Count
+- Smart Suggestions for Improvements
+- Detailed Analysis Summary
 
 ---
 
@@ -77,43 +71,44 @@ Generate intelligent quality insights including:
 
 Supported languages include:
 
-* Java (Full Support)
-* Python
-* JavaScript
-* TypeScript
-* C
-* C++
+- Java (Full Support)
+- Python
+- JavaScript
+- TypeScript
+- C
+- C++
 
 ---
 
-### 🎨 Beautiful User Interface
+### 🎨 Modern Dashboard
 
-* Clean and modern dashboard
-* Multiple color themes
-* Real-time analysis
-* Interactive result visualization
-* Keyboard shortcut support (`Ctrl + Enter`)
+- Clean and responsive UI
+- Real-time analysis results
+- Interactive issue reporting
+- Keyboard shortcut support (`Ctrl + Enter`)
+- Developer-friendly interface
 
 ---
 
-## 🚀 Tech Stack
+## 🚀 Technology Stack
 
 ### Backend Technologies
 
-| Technology  | Version | Purpose                   |
-| ----------- | ------- | ------------------------- |
-| Java        | 17+     | Core programming language |
-| Spring Boot | 2.7.0   | Backend framework         |
-| Maven       | 3.x     | Build automation          |
-| Lombok      | 1.18.24 | Boilerplate reduction     |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Java | 17+ | Core programming language |
+| Spring Boot | 2.7+ | Backend framework |
+| Maven | 3.x | Build automation |
+| Lombok | 1.18+ | Boilerplate reduction |
+| Embedded Tomcat | Included | Application server |
 
 ### Frontend Technologies
 
-| Technology | Version | Purpose                   |
-| ---------- | ------- | ------------------------- |
-| HTML5      | Latest  | Application structure     |
-| CSS3       | Latest  | Styling and layout        |
-| JavaScript | ES6+    | Client-side functionality |
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| HTML5 | Latest | Application structure |
+| CSS3 | Latest | Styling and layout |
+| JavaScript | ES6+ | Client-side functionality |
 
 ---
 
@@ -121,8 +116,8 @@ Supported languages include:
 
 ### Prerequisites
 
-* Java 17 or higher
-* Maven 3.x or higher
+- Java 17 or higher
+- Maven 3.x or higher
 
 ### Step 1: Clone Repository
 
@@ -176,7 +171,7 @@ Response:
 POST /api/analyze
 ```
 
-Request Example:
+Example Request:
 
 ```json
 {
@@ -185,7 +180,7 @@ Request Example:
 }
 ```
 
-Response Example:
+Example Response:
 
 ```json
 {
@@ -222,56 +217,62 @@ codemirror/
 
 ---
 
-## 🎯 Sample Usage
+## 🎯 Example Analysis
 
-### Example: Code Analysis
-
-#### Input
+### Input
 
 ```java
 public class Calculator {
 
     public int divide(int a, int b) {
-        return a / b; // Division by zero risk
+        return a / b;
     }
 
     public void login() {
-        String password = "admin123"; // Hardcoded password
+        String password = "admin123";
         System.out.println("Logged in!");
     }
 }
 ```
 
-#### Analysis Result
+### Output
 
 ```text
 Quality Score: 70/100
 
 ⚠️ Issues Detected:
-- Division by zero risk detected
-- Hardcoded password detected
-- System.out.println used in production code
+• Division by zero risk detected
+• Hardcoded password detected
+• System.out.println used in production code
 
 🔒 Security Issues:
-- Hardcoded credentials found
+• Hardcoded credentials found
 
 💡 Suggested Improvements:
-- Validate divisor before division
-- Move credentials to environment variables
-- Replace print statements with a logging framework
+• Validate divisor before division
+• Move credentials to environment variables
+• Replace print statements with a logging framework
 ```
+
 ---
+
 
 ## 👨‍💻 Author
 
 ### Krishna Popat
 
-Passionate about building AI-powered developer tools, automation solutions, and intelligent software systems.
+Passionate about developer tools, software quality engineering, and intelligent automation solutions.
 
 ---
 
 ## ⭐ Support
 
-If you found this project useful, consider giving it a star on GitHub.
+If you found this project useful, consider giving it a ⭐ on GitHub.
 
-Made with ❤️ by Krishna Popat
+---
+
+<div align="center">
+
+Built with ❤️ by Krishna Popat
+
+</div>
