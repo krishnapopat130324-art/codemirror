@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CodeMirror - Code Review Assistant</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
@@ -19,14 +15,8 @@
             padding: 20px;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1200px; margin: 0 auto; }
 
-        /* ============================================================
-           HEADER
-           ============================================================ */
         .header {
             text-align: center;
             padding: 30px 0;
@@ -34,25 +24,10 @@
             margin-bottom: 30px;
         }
 
-        .header h1 {
-            font-size: 36px;
-            color: #0a2a6a;
-            text-shadow: 0 2px 8px rgba(26, 74, 138, 0.15);
-        }
+        .header h1 { font-size: 36px; color: #0a2a6a; text-shadow: 0 2px 8px rgba(26, 74, 138, 0.15); }
+        .header h1 span { color: #1a5aaa; }
+        .header p { color: #2a5a8a; font-size: 16px; margin-top: 8px; }
 
-        .header h1 span {
-            color: #1a5aaa;
-        }
-
-        .header p {
-            color: #2a5a8a;
-            font-size: 16px;
-            margin-top: 8px;
-        }
-
-        /* ============================================================
-           EDITOR SECTION
-           ============================================================ */
         .editor-section {
             background: #ffffff;
             padding: 25px;
@@ -70,12 +45,7 @@
             flex-wrap: wrap;
         }
 
-        .toolbar label {
-            color: #2a5a8a;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
+        .toolbar label { color: #2a5a8a; font-size: 14px; font-weight: 600; }
         .toolbar select {
             padding: 8px 15px;
             border-radius: 8px;
@@ -86,12 +56,7 @@
             cursor: pointer;
             transition: border-color 0.3s;
         }
-
-        .toolbar select:focus {
-            outline: none;
-            border-color: #1a5aaa;
-            box-shadow: 0 0 0 3px rgba(26, 90, 170, 0.15);
-        }
+        .toolbar select:focus { outline: none; border-color: #1a5aaa; box-shadow: 0 0 0 3px rgba(26, 90, 170, 0.15); }
 
         .toolbar button {
             padding: 10px 25px;
@@ -105,33 +70,12 @@
             transition: all 0.3s;
             box-shadow: 0 2px 8px rgba(26, 74, 138, 0.25);
         }
+        .toolbar button:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(26, 74, 138, 0.35); background: linear-gradient(135deg, #0a3a7a, #2a6aba); }
+        .toolbar button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        .toolbar button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(26, 74, 138, 0.35);
-            background: linear-gradient(135deg, #0a3a7a, #2a6aba);
-        }
+        .loading-text { color: #1a5aaa; font-style: italic; margin-left: 15px; }
+        .hidden { display: none; }
 
-        .toolbar button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .loading-text {
-            color: #1a5aaa;
-            font-style: italic;
-            margin-left: 15px;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        /* ============================================================
-           TEXTAREA
-           ============================================================ */
         textarea {
             width: 100%;
             height: 300px;
@@ -146,20 +90,9 @@
             line-height: 1.6;
             transition: border-color 0.3s;
         }
+        textarea:focus { outline: none; border-color: #1a5aaa; box-shadow: 0 0 0 3px rgba(26, 90, 170, 0.1); }
+        textarea::placeholder { color: #7a9ac0; }
 
-        textarea:focus {
-            outline: none;
-            border-color: #1a5aaa;
-            box-shadow: 0 0 0 3px rgba(26, 90, 170, 0.1);
-        }
-
-        textarea::placeholder {
-            color: #7a9ac0;
-        }
-
-        /* ============================================================
-           RESULTS SECTION
-           ============================================================ */
         .results {
             background: #ffffff;
             padding: 25px;
@@ -169,26 +102,26 @@
             box-shadow: 0 4px 16px rgba(26, 74, 138, 0.08);
         }
 
-        .results h3 {
-            font-size: 20px;
-            margin-bottom: 15px;
-            color: #0a1a3a;
+        /* ============================================================
+           TWO SCORE CARDS
+           ============================================================ */
+        .score-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
-        /* ============================================================
-           QUALITY SCORE
-           ============================================================ */
-        .score-container {
+        .score-card {
             text-align: center;
             padding: 20px;
             background: #e8f0fe;
             border-radius: 8px;
-            margin-bottom: 20px;
             border: 1px solid #b0cce8;
         }
 
-        .score-number {
-            font-size: 56px;
+        .score-card .number {
+            font-size: 48px;
             font-weight: bold;
             background: linear-gradient(135deg, #0a2a6a, #1a5aaa);
             -webkit-background-clip: text;
@@ -196,14 +129,37 @@
             background-clip: text;
         }
 
-        .score-label {
-            color: #2a5a8a;
-            font-size: 14px;
-        }
+        .score-card .label { color: #2a5a8a; font-size: 14px; font-weight: 500; }
 
         /* ============================================================
-           STATUS
+           SECURITY LEVEL BADGES
            ============================================================ */
+        .score-card .level {
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 4px;
+            padding: 2px 14px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+        .level-high { color: #1a7a3a; background: #e8f5ee; }
+        .level-medium { color: #b8860b; background: #fdf8ee; }
+        .level-low { color: #b22222; background: #fdeeee; }
+
+        /* ============================================================
+           SESSION INFO
+           ============================================================ */
+        .session-info {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #7a9ac0;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            border-top: 1px solid #e8f0fe;
+            padding-top: 10px;
+        }
+
         .status {
             font-size: 20px;
             font-weight: bold;
@@ -212,43 +168,13 @@
             border-radius: 8px;
             text-align: center;
         }
+        .status-clean { color: #1a7a3a; background: #e8f5ee; border: 1px solid #2a8a4e; }
+        .status-warning { color: #b8860b; background: #fdf8ee; border: 1px solid #d4a017; }
+        .status-critical { color: #b22222; background: #fdeeee; border: 1px solid #dc3545; }
+        .status-message { text-align: center; color: #2a5a8a; margin-bottom: 15px; }
 
-        .status-clean {
-            color: #1a7a3a;
-            background: #e8f5ee;
-            border: 1px solid #2a8a4e;
-        }
-
-        .status-warning {
-            color: #b8860b;
-            background: #fdf8ee;
-            border: 1px solid #d4a017;
-        }
-
-        .status-critical {
-            color: #b22222;
-            background: #fdeeee;
-            border: 1px solid #dc3545;
-        }
-
-        .status-message {
-            text-align: center;
-            color: #2a5a8a;
-            margin-bottom: 15px;
-        }
-
-        /* ============================================================
-           ISSUES
-           ============================================================ */
-        .issues-section {
-            margin-top: 15px;
-        }
-
-        .issues-section h4 {
-            color: #0a1a3a;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
+        .issues-section { margin-top: 15px; }
+        .issues-section h4 { color: #0a1a3a; margin-bottom: 10px; font-size: 16px; }
 
         .issue {
             padding: 12px 15px;
@@ -260,30 +186,11 @@
             line-height: 1.5;
             color: #0a1a3a;
         }
+        .issue-security { border-left-color: #dc3545; background: #fdf0f0; }
+        .issue-info { border-left-color: #1a5aaa; background: #e8f0fe; }
 
-        .issue-security {
-            border-left-color: #dc3545;
-            background: #fdf0f0;
-        }
-
-        .issue-info {
-            border-left-color: #1a5aaa;
-            background: #e8f0fe;
-        }
-
-        /* ============================================================
-           SUGGESTIONS
-           ============================================================ */
-        .suggestions-section {
-            margin-top: 15px;
-        }
-
-        .suggestions-section h4 {
-            color: #0a1a3a;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-
+        .suggestions-section { margin-top: 15px; }
+        .suggestions-section h4 { color: #0a1a3a; margin-bottom: 10px; font-size: 16px; }
         .suggestion {
             padding: 10px 15px;
             margin: 5px 0;
@@ -294,19 +201,8 @@
             border-left: 4px solid #1a5aaa;
         }
 
-        /* ============================================================
-           SUMMARY
-           ============================================================ */
-        .summary-section {
-            margin-top: 15px;
-        }
-
-        .summary-section h4 {
-            color: #0a1a3a;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-
+        .summary-section { margin-top: 15px; }
+        .summary-section h4 { color: #0a1a3a; margin-bottom: 10px; font-size: 16px; }
         .summary-box {
             background: #e8f0fe;
             padding: 15px;
@@ -319,18 +215,8 @@
             border: 1px solid #b0cce8;
         }
 
-        /* ============================================================
-           DIVIDER
-           ============================================================ */
-        .divider {
-            border: none;
-            border-top: 1px solid #b0cce8;
-            margin: 20px 0;
-        }
+        .divider { border: none; border-top: 1px solid #b0cce8; margin: 20px 0; }
 
-        /* ============================================================
-           ERROR
-           ============================================================ */
         .error-box {
             background: #fdeeee;
             color: #b22222;
@@ -340,65 +226,51 @@
             border: 1px solid #f5baba;
         }
 
-        /* ============================================================
-           EMPTY STATE
-           ============================================================ */
         .empty-state {
             text-align: center;
             padding: 40px 20px;
             color: #2a5a8a;
         }
+        .empty-state .icon { font-size: 48px; margin-bottom: 15px; }
+        .empty-state h3 { color: #0a1a3a; margin-bottom: 8px; }
+        .empty-state p { color: #4a6a8a; font-size: 14px; }
 
-        .empty-state .icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-
-        .empty-state h3 {
-            color: #0a1a3a;
-            margin-bottom: 8px;
-        }
-
+        /* ============================================================
+           UPDATED: FEATURES GRID - NOW SHOWING ALL 6 FEATURES
+           ============================================================ */
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 12px;
             margin-top: 20px;
         }
-
         .features-grid .feature {
             background: #e8f0fe;
-            padding: 12px;
+            padding: 12px 14px;
             border-radius: 8px;
             border: 1px solid #b0cce8;
-            font-size: 14px;
+            font-size: 13px;
             color: #0a1a3a;
+            text-align: center;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .features-grid .feature:hover {
+            background: #d0dce8;
+            border-color: #1a5aaa;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(26, 74, 138, 0.1);
         }
 
-        /* ============================================================
-           RESPONSIVE
-           ============================================================ */
         @media (max-width: 600px) {
-            .header h1 {
-                font-size: 24px;
-            }
-
-            .toolbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            textarea {
-                height: 200px;
-            }
-
-            .score-number {
-                font-size: 36px;
-            }
-
-            .container {
-                padding: 10px;
-            }
+            .header h1 { font-size: 24px; }
+            .toolbar { flex-direction: column; align-items: stretch; }
+            textarea { height: 200px; }
+            .score-cards { grid-template-columns: 1fr; }
+            .score-card .number { font-size: 36px; }
+            .container { padding: 10px; }
+            .features-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+            .features-grid .feature { font-size: 12px; padding: 10px; }
         }
     </style>
 </head>
@@ -406,17 +278,11 @@
 
     <div class="container">
 
-        <!-- ============================================================
-        HEADER
-        ============================================================ -->
         <div class="header">
             <h1>🔵 <span>Code</span>Mirror</h1>
             <p>AI-Powered Code Review Assistant</p>
         </div>
 
-        <!-- ============================================================
-        EDITOR SECTION
-        ============================================================ -->
         <div class="editor-section">
             <div class="toolbar">
                 <label for="language">Language:</label>
@@ -427,6 +293,10 @@
                     <option value="typescript">TypeScript</option>
                     <option value="c">C</option>
                     <option value="cpp">C++</option>
+                    <option value="csharp">C#</option>
+                    <option value="go">Go</option>
+                    <option value="rust">Rust</option>
+                    <option value="php">PHP</option>
                 </select>
 
                 <button onclick="analyzeCode()">🚀 Analyze Code</button>
@@ -445,37 +315,33 @@
 }</textarea>
         </div>
 
-        <!-- ============================================================
-        RESULTS SECTION
-        ============================================================ -->
         <div id="resultsContainer" class="hidden">
             <div class="results" id="resultsContent">
                 <!-- Dynamically populated -->
             </div>
         </div>
 
-        <!-- ============================================================
-        EMPTY STATE
-        ============================================================ -->
         <div id="emptyState" class="results">
             <div class="empty-state">
                 <div class="icon">🔷</div>
                 <h3>Waiting for Code</h3>
                 <p>Paste your code in the editor and click "Analyze Code"</p>
+                <!-- ============================================================
+                UPDATED: Now showing 6 features instead of 4
+                ============================================================ -->
                 <div class="features-grid">
-                    <div class="feature">✅ Bug Detection</div>
+                    <div class="feature">🐛 Bug Detection</div>
                     <div class="feature">🔒 Security Scanning</div>
                     <div class="feature">📊 Quality Score</div>
                     <div class="feature">💡 Smart Suggestions</div>
+                    <div class="feature">🌐 10+ Languages</div>
+                    <div class="feature">📜 History Tracking</div>
                 </div>
             </div>
         </div>
 
     </div>
 
-    <!-- ============================================================
-    JAVASCRIPT
-    ============================================================ -->
     <script>
         async function analyzeCode() {
             const code = document.getElementById('codeInput').value;
@@ -497,15 +363,11 @@
             try {
                 const response = await fetch('http://localhost:8080/api/analyze', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ code, language }),
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`Server error: ${response.status}`);
 
                 const data = await response.json();
                 emptyState.style.display = 'none';
@@ -529,16 +391,24 @@
             const container = document.getElementById('resultsContent');
 
             let statusClass = 'status-clean';
-            if (data.status && data.status.includes('CRITICAL')) {
-                statusClass = 'status-critical';
-            } else if (data.status && data.status.includes('Issues')) {
-                statusClass = 'status-warning';
-            }
+            if (data.status && data.status.includes('CRITICAL')) statusClass = 'status-critical';
+            else if (data.status && data.status.includes('Issues')) statusClass = 'status-warning';
+
+            let levelClass = 'level-low';
+            if (data.securityLevel === 'HIGH') levelClass = 'level-high';
+            else if (data.securityLevel === 'MEDIUM') levelClass = 'level-medium';
 
             let html = `
-                <div class="score-container">
-                    <div class="score-number">${data.qualityScore || 0}/100</div>
-                    <div class="score-label">Quality Score</div>
+                <div class="score-cards">
+                    <div class="score-card">
+                        <div class="number">${data.qualityScore || 0}</div>
+                        <div class="label">Quality Score</div>
+                    </div>
+                    <div class="score-card">
+                        <div class="number">${data.securityScore || 0}</div>
+                        <div class="label">Security Score</div>
+                        <div class="level ${levelClass}">${data.securityLevel || 'N/A'}</div>
+                    </div>
                 </div>
 
                 <div class="status ${statusClass}">
@@ -555,9 +425,7 @@
                 html += `
                     <div class="issues-section">
                         <h4>⚠️ Issues (${data.issues.length})</h4>
-                        ${data.issues.map(issue => `
-                            <div class="issue">${issue}</div>
-                        `).join('')}
+                        ${data.issues.map(issue => `<div class="issue">${issue}</div>`).join('')}
                     </div>
                 `;
             }
@@ -566,9 +434,7 @@
                 html += `
                     <div class="issues-section">
                         <h4>🔴 Security Issues (${data.securityIssues.length})</h4>
-                        ${data.securityIssues.map(issue => `
-                            <div class="issue issue-security">${issue}</div>
-                        `).join('')}
+                        ${data.securityIssues.map(issue => `<div class="issue issue-security">${issue}</div>`).join('')}
                     </div>
                 `;
             }
@@ -577,9 +443,7 @@
                 html += `
                     <div class="suggestions-section">
                         <h4>💡 Suggestions</h4>
-                        ${data.suggestions.map(suggestion => `
-                            <div class="suggestion">🔷 ${suggestion}</div>
-                        `).join('')}
+                        ${data.suggestions.map(suggestion => `<div class="suggestion">🔷 ${suggestion}</div>`).join('')}
                     </div>
                 `;
             }
@@ -589,6 +453,15 @@
                     <div class="summary-section">
                         <h4>📊 Summary</h4>
                         <div class="summary-box">${data.summary}</div>
+                    </div>
+                `;
+            }
+
+            if (data.sessionId) {
+                html += `
+                    <div class="session-info">
+                        <span>🆔 Session: ${data.sessionId.substring(0, 8)}...</span>
+                        <span>🕐 ${data.timestamp || ''}</span>
                     </div>
                 `;
             }
@@ -605,6 +478,7 @@
 
         console.log('🔵 CodeMirror Frontend loaded!');
         console.log('💡 Press Ctrl+Enter to analyze code');
+        console.log('🌐 Supports 10+ languages');
     </script>
 
 </body>

@@ -6,29 +6,38 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
+import org.springframework.http.*;
+import java.util.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @SpringBootApplication
 @RestController
 @CrossOrigin(origins = "*")
 public class App {
 
+    // ============================================================
+    // IN-MEMORY STORAGE FOR HISTORY
+    // ============================================================
+    private final List<AnalysisHistory> analysisHistory = new ArrayList<>();
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     public static void main(String[] args) {
         SpringApplication.run(App.class, args);
         System.out.println("""
-            ╔═══════════════════════════════════════════╗
-            ║  🚀 CodeMirror Started Successfully!     ║
-            ║  📝 Code Review Assistant is Ready       ║
-            ║  🌐 http://localhost:8080                ║
-            ╚═══════════════════════════════════════════╝
+            ╔═══════════════════════════════════════════════════════════╗
+            ║  🚀 CodeMirror-X Started Successfully!                  ║
+            ║  📝 Enterprise Code Review Assistant                    ║
+            ║  🌐 http://localhost:8080                               ║
+            ║  📊 Multi-Language Support | History | Export           ║
+            ╚═══════════════════════════════════════════════════════════╝
         """);
     }
 
     // ============================================================
-    // CORS CONFIGURATION - Allows frontend to communicate with backend
+    // CORS CONFIGURATION
     // ============================================================
     @Bean
     public WebMvcConfigurer corsConfigurer() {
@@ -49,7 +58,7 @@ public class App {
     // ============================================================
     @GetMapping("/api/health")
     public String health() {
-        return "✅ CodeMirror is running!";
+        return "✅ CodeMirror-X is running!";
     }
 
     // ============================================================
@@ -57,150 +66,269 @@ public class App {
     // ============================================================
     @PostMapping("/api/analyze")
     public Map<String, Object> analyzeCode(@RequestBody Map<String, String> request) {
-        // Get code and language from request
         String code = request.get("code");
         String language = request.getOrDefault("language", "java");
+        String sessionId = request.getOrDefault("sessionId", UUID.randomUUID().toString());
         
-        // Create response object
         Map<String, Object> response = new HashMap<>();
         
-        // ============================================================
-        // BASIC METRICS
-        // ============================================================
+        // Basic Metrics
         response.put("language", language);
         response.put("lines", code.split("\n").length);
         response.put("characters", code.length());
+        response.put("sessionId", sessionId);
+        response.put("timestamp", LocalDateTime.now().format(formatter));
         
-        // ============================================================
-        // BUG DETECTION
-        // ============================================================
+        // Bug Detection
         List<String> issues = new ArrayList<>();
         List<String> securityIssues = new ArrayList<>();
         List<String> suggestions = new ArrayList<>();
         
-        // 1. Check for division by zero
+        detectCommonIssues(code, language, issues, securityIssues, suggestions);
+        detectLanguageSpecificIssues(code, language, issues, securityIssues, suggestions);
+        
+        // Scores
+        int qualityScore = calculateQualityScore(issues, securityIssues);
+        int securityScore = calculateSecurityScore(securityIssues);
+        String securityLevel = securityScore >= 80 ? "HIGH" : 
+                               securityScore >= 50 ? "MEDIUM" : "LOW";
+        
+        response.put("issues", issues);
+        response.put("securityIssues", securityIssues);
+        response.put("suggestions", suggestions);
+        response.put("qualityScore", qualityScore);
+        response.put("securityScore", securityScore);
+        response.put("securityLevel", securityLevel);
+        
+        setStatus(response, issues, securityIssues);
+        response.put("summary", generateSummary(language, code, issues, securityIssues, qualityScore, securityScore));
+        
+        saveToHistory(sessionId, language, code, response);
+        
+        return response;
+    }
+
+    // ============================================================
+    // COMMON ISSUES DETECTION
+    // ============================================================
+    private void detectCommonIssues(String code, String language, 
+                                    List<String> issues, 
+                                    List<String> securityIssues, 
+                                    List<String> suggestions) {
+        // Division by zero
         if (code.contains("/ 0") || code.contains("/0") || code.contains(" /0")) {
-            issues.add("⚠️ Division by zero detected! Check if denominator can be 0.");
-            suggestions.add("Add a condition to check if denominator is not zero before division.");
+            issues.add("⚠️ Division by zero detected!");
+            suggestions.add("Add a condition to check if denominator is not zero.");
         }
         
-        // 2. Check for hardcoded passwords
+        // Hardcoded passwords
         if (code.toLowerCase().contains("password") && (code.contains("=") || code.contains("=="))) {
-            securityIssues.add("🔴 Hardcoded password detected! Never hardcode credentials.");
-            suggestions.add("Use environment variables or a secure vault for passwords.");
+            securityIssues.add("🔴 Hardcoded password detected!");
+            suggestions.add("Use environment variables or a secure vault.");
         }
         
-        // 3. Check for hardcoded secrets / API keys
+        // Hardcoded secrets/API keys
         if (code.toLowerCase().contains("secret") || 
             code.toLowerCase().contains("apikey") || 
             code.toLowerCase().contains("api_key")) {
             securityIssues.add("🔴 Hardcoded secret/API key detected!");
-            suggestions.add("Store secrets in environment variables or a secure configuration.");
+            suggestions.add("Store secrets in environment variables.");
         }
         
-        // 4. Check for infinite loops
+        // Infinite loops
         if (code.contains("while (true)") || code.contains("while(true)")) {
-            issues.add("🔴 Infinite loop detected! This will crash your application.");
-            suggestions.add("Add a break condition or a timeout mechanism.");
+            issues.add("🔴 Infinite loop detected!");
+            suggestions.add("Add a break condition or timeout mechanism.");
         }
         
-        // 5. Check for SQL Injection
+        // SQL Injection
         if (code.toUpperCase().contains("SELECT") && code.contains("+")) {
             securityIssues.add("🔴 SQL Injection risk detected!");
-            suggestions.add("Use PreparedStatement with parameterized queries instead of string concatenation.");
+            suggestions.add("Use PreparedStatement with parameterized queries.");
         }
         
-        // 6. Check for empty catch blocks
+        // Empty catch blocks
         if (code.contains("catch") && code.contains("{}")) {
-            issues.add("⚠️ Empty catch block found! Exceptions should be handled properly.");
-            suggestions.add("Log the exception or handle it appropriately.");
+            issues.add("⚠️ Empty catch block found!");
+            suggestions.add("Log the exception or handle it properly.");
         }
         
-        // 7. Check for System.out.println
-        if (code.contains("System.out.println")) {
-            issues.add("💡 System.out.println used in production code.");
-            suggestions.add("Use a proper logging framework like SLF4J or Logback.");
+        // Print statements
+        if (code.contains("System.out.println") || 
+            code.contains("print(") || 
+            code.contains("console.log(")) {
+            issues.add("💡 Print statement used in production code.");
+            suggestions.add("Use a proper logging framework.");
         }
         
-        // 8. Check for printStackTrace
+        // printStackTrace
         if (code.contains("printStackTrace")) {
-            issues.add("⚠️ printStackTrace() used! This exposes stack traces to users.");
-            suggestions.add("Use a logging framework to log exceptions properly.");
+            issues.add("⚠️ printStackTrace() used!");
+            suggestions.add("Use a logging framework to log exceptions.");
         }
         
-        // 9. Check for Thread.sleep in loops
-        if (code.contains("Thread.sleep") && (code.contains("while") || code.contains("for"))) {
-            issues.add("⚠️ Thread.sleep() in loop detected! This can cause performance issues.");
-            suggestions.add("Consider using a scheduled executor service.");
-        }
-        
-        // 10. Check for magic numbers
+        // Magic numbers
         if (code.matches(".*[^\\w]\\d{3,}.*") && !code.contains("//") && !code.contains("/*")) {
-            issues.add("💡 Magic number detected. Numbers without explanation are hard to maintain.");
-            suggestions.add("Define constants with meaningful names for numbers.");
+            issues.add("💡 Magic number detected.");
+            suggestions.add("Define constants with meaningful names.");
         }
         
-        // 11. Check for null checks
-        if (code.contains(".equals(") && !code.contains("null")) {
-            issues.add("💡 Potential NullPointerException risk.");
-            suggestions.add("Add null checks before calling methods on objects.");
-        }
-        
-        // 12. Check for hardcoded URLs
+        // Hardcoded URLs
         if ((code.contains("http://") || code.contains("https://")) && 
             !code.contains("properties") && !code.contains("config")) {
             issues.add("💡 Hardcoded URL detected.");
             suggestions.add("Move URLs to configuration files.");
         }
         
-        // 13. Check for too many parameters in a method
+        // TODO/FIXME comments
+        if (code.contains("TODO") || code.contains("FIXME")) {
+            issues.add("💡 TODO/FIXME comment found.");
+            suggestions.add("Complete TODO items before deployment.");
+        }
+        
+        // Too many parameters
         if (code.matches(".*\\w+\\s*\\([^)]*\\).*")) {
             String[] parts = code.split(",");
             int paramCount = parts.length - 1;
             if (paramCount > 5) {
-                issues.add("⚠️ Method with " + paramCount + " parameters detected. Too many!");
-                suggestions.add("Consider using a DTO (Data Transfer Object) or builder pattern.");
+                issues.add("⚠️ Method with " + paramCount + " parameters detected!");
+                suggestions.add("Use a DTO or builder pattern.");
             }
         }
         
-        // 14. Check for TODO comments
-        if (code.contains("TODO") || code.contains("FIXME")) {
-            issues.add("💡 TODO/FIXME comment found. This might be unfinished work.");
-            suggestions.add("Complete the TODO items before deployment.");
+        // Null checks
+        if (code.contains(".equals(") && !code.contains("null")) {
+            issues.add("💡 Potential NullPointerException risk.");
+            suggestions.add("Add null checks before calling methods on objects.");
         }
         
-        // 15. Check for large methods (simplified)
+        // Thread.sleep in loops
+        if (code.contains("Thread.sleep") && (code.contains("while") || code.contains("for"))) {
+            issues.add("⚠️ Thread.sleep() in loop detected!");
+            suggestions.add("Consider using a scheduled executor service.");
+        }
+        
+        // Large methods
         if (code.split("\n").length > 50) {
-            issues.add("⚠️ Large method detected. Methods should be short and focused.");
+            issues.add("⚠️ Large method detected (>50 lines).");
             suggestions.add("Break down large methods into smaller, focused functions.");
         }
+    }
 
-        // ============================================================
-        // QUALITY SCORE CALCULATION
-        // ============================================================
-        int score = 100;
-        
-        // Deduct points for each issue
-        score -= issues.size() * 5;           // Each issue = -5 points
-        score -= securityIssues.size() * 15;  // Each security issue = -15 points
-        
-        // Bonus for clean code
-        if (issues.isEmpty() && securityIssues.isEmpty()) {
-            score = Math.min(score + 5, 100); // Bonus for clean code
+    // ============================================================
+    // LANGUAGE-SPECIFIC DETECTION
+    // ============================================================
+    private void detectLanguageSpecificIssues(String code, String language,
+                                              List<String> issues,
+                                              List<String> securityIssues,
+                                              List<String> suggestions) {
+        switch (language.toLowerCase()) {
+            case "python":
+                if (code.contains("print(") && !code.contains("logging")) {
+                    issues.add("💡 print() used instead of logging.");
+                    suggestions.add("Use Python's logging module for production.");
+                }
+                if (code.contains("import ") && code.contains("*")) {
+                    issues.add("⚠️ Wildcard import detected (import *).");
+                    suggestions.add("Import only specific functions/classes.");
+                }
+                if (code.contains("except:") && !code.contains("except Exception")) {
+                    issues.add("⚠️ Bare except clause detected.");
+                    suggestions.add("Specify exception type to catch.");
+                }
+                break;
+                
+            case "javascript":
+            case "typescript":
+                if (code.contains("==") && !code.contains("===")) {
+                    issues.add("⚠️ '==' used instead of '==='.");
+                    suggestions.add("Use '===' for strict equality checking.");
+                }
+                if (code.contains("var ")) {
+                    issues.add("💡 'var' used. Consider 'let' or 'const'.");
+                    suggestions.add("Use 'let' for mutable, 'const' for constants.");
+                }
+                if (code.contains("console.log")) {
+                    issues.add("💡 console.log used in production.");
+                    suggestions.add("Remove console.log statements in production.");
+                }
+                if (code.contains("any") && !code.contains(": any")) {
+                    issues.add("⚠️ 'any' type used in TypeScript.");
+                    suggestions.add("Use a specific type instead of 'any'.");
+                }
+                break;
+                
+            case "c":
+            case "cpp":
+                if (code.contains("malloc(") && !code.contains("free(")) {
+                    issues.add("⚠️ Potential memory leak: malloc without free.");
+                    suggestions.add("Always free allocated memory.");
+                }
+                if (code.contains("scanf(") && !code.contains("fgets(")) {
+                    issues.add("⚠️ scanf() detected. Buffer overflow risk.");
+                    suggestions.add("Use fgets() instead of scanf().");
+                }
+                break;
+                
+            case "csharp":
+                if (code.contains("Console.WriteLine") && !code.contains("ILogger")) {
+                    issues.add("💡 Console.WriteLine used in production.");
+                    suggestions.add("Use ILogger for logging in C#.");
+                }
+                break;
+                
+            case "go":
+                if (code.contains("panic(") && !code.contains("recover()")) {
+                    issues.add("⚠️ panic() detected without recover.");
+                    suggestions.add("Use recover() to handle panics gracefully.");
+                }
+                break;
+                
+            case "rust":
+                if (code.contains("unwrap(") && !code.contains("expect(")) {
+                    issues.add("⚠️ unwrap() used. This can panic.");
+                    suggestions.add("Use expect() with a message or handle Result properly.");
+                }
+                if (code.contains("unsafe {")) {
+                    securityIssues.add("🔴 Unsafe block used in Rust.");
+                    suggestions.add("Minimize use of unsafe blocks. Document why it's needed.");
+                }
+                break;
+                
+            case "php":
+                if (code.contains("mysql_query(") || code.contains("mysqli_query(")) {
+                    securityIssues.add("🔴 Direct database query detected. SQL Injection risk.");
+                    suggestions.add("Use PDO with prepared statements.");
+                }
+                break;
         }
-        
-        // Ensure score is between 0 and 100
-        score = Math.max(0, Math.min(100, score));
-        
-        // ============================================================
-        // BUILD RESPONSE
-        // ============================================================
-        response.put("issues", issues);
-        response.put("securityIssues", securityIssues);
-        response.put("suggestions", suggestions);
-        response.put("qualityScore", score);
-        
-        // Determine status based on issues found
+    }
+
+    // ============================================================
+    // SCORE CALCULATIONS
+    // ============================================================
+    private int calculateQualityScore(List<String> issues, List<String> securityIssues) {
+        int score = 100;
+        score -= issues.size() * 5;
+        score -= securityIssues.size() * 15;
+        if (issues.isEmpty() && securityIssues.isEmpty()) {
+            score = Math.min(score + 5, 100);
+        }
+        return Math.max(0, Math.min(100, score));
+    }
+
+    private int calculateSecurityScore(List<String> securityIssues) {
+        int score = 100;
+        score -= securityIssues.size() * 20;
+        return Math.max(0, Math.min(100, score));
+    }
+
+    // ============================================================
+    // STATUS & SUMMARY
+    // ============================================================
+    private void setStatus(Map<String, Object> response, 
+                           List<String> issues, 
+                           List<String> securityIssues) {
         if (issues.isEmpty() && securityIssues.isEmpty()) {
             response.put("status", "✅ Code looks clean!");
             response.put("message", "No issues found. Great job! 🎉");
@@ -209,34 +337,186 @@ public class App {
             response.put("message", "Fix security issues immediately before deploying!");
         } else if (issues.size() > 3) {
             response.put("status", "⚠️ Multiple issues found!");
-            response.put("message", "Please review all issues and fix them for better code quality.");
+            response.put("message", "Review all issues and fix them for better code quality.");
         } else {
             response.put("status", "⚠️ Issues found!");
-            response.put("message", "Review the issues above and fix them to improve code quality.");
+            response.put("message", "Review the issues above and fix them.");
         }
-        
-        // ============================================================
-        // SUMMARY
-        // ============================================================
-        String summary = String.format(
-            "Code Analysis Summary\n" +
-            "────────────────────\n" +
+    }
+
+    private String generateSummary(String language, String code, 
+                                   List<String> issues, 
+                                   List<String> securityIssues,
+                                   int qualityScore, int securityScore) {
+        return String.format(
+            "📊 Code Analysis Summary\n" +
+            "────────────────────────\n" +
             "Language: %s\n" +
             "Lines: %d\n" +
             "Characters: %d\n" +
             "Issues: %d\n" +
             "Security Issues: %d\n" +
             "Quality Score: %d/100\n" +
-            "────────────────────",
+            "Security Score: %d/100\n" +
+            "Security Level: %s\n" +
+            "────────────────────────",
             language,
             code.split("\n").length,
             code.length(),
             issues.size(),
             securityIssues.size(),
-            score
+            qualityScore,
+            securityScore,
+            securityScore >= 80 ? "HIGH" : securityScore >= 50 ? "MEDIUM" : "LOW"
         );
-        response.put("summary", summary);
+    }
+
+    // ============================================================
+    // HISTORY
+    // ============================================================
+    private void saveToHistory(String sessionId, String language, String code, 
+                               Map<String, Object> response) {
+        AnalysisHistory record = new AnalysisHistory();
+        record.setId(UUID.randomUUID().toString());
+        record.setSessionId(sessionId);
+        record.setLanguage(language);
+        record.setCode(code);
+        record.setTimestamp(LocalDateTime.now().format(formatter));
+        record.setQualityScore((int) response.get("qualityScore"));
+        record.setSecurityScore((int) response.get("securityScore"));
+        record.setIssues((List<String>) response.get("issues"));
+        record.setSecurityIssues((List<String>) response.get("securityIssues"));
+        record.setSuggestions((List<String>) response.get("suggestions"));
+        record.setStatus((String) response.get("status"));
         
-        return response;
+        analysisHistory.add(record);
+        if (analysisHistory.size() > 100) {
+            analysisHistory.remove(0);
+        }
+    }
+
+    @GetMapping("/api/history")
+    public ResponseEntity<List<Map<String, Object>>> getHistory() {
+        List<Map<String, Object>> history = analysisHistory.stream()
+            .map(record -> {
+                Map<String, Object> item = new HashMap<>();
+                item.put("id", record.getId());
+                item.put("timestamp", record.getTimestamp());
+                item.put("language", record.getLanguage());
+                item.put("qualityScore", record.getQualityScore());
+                item.put("securityScore", record.getSecurityScore());
+                item.put("issues", record.getIssues());
+                item.put("securityIssues", record.getSecurityIssues());
+                item.put("suggestions", record.getSuggestions());
+                item.put("status", record.getStatus());
+                String truncatedCode = record.getCode();
+                if (truncatedCode.length() > 200) {
+                    truncatedCode = truncatedCode.substring(0, 200) + "...";
+                }
+                item.put("codePreview", truncatedCode);
+                return item;
+            })
+            .collect(Collectors.toList());
+        
+        Collections.reverse(history);
+        return ResponseEntity.ok(history);
+    }
+
+    @GetMapping("/api/export/{id}")
+    public ResponseEntity<String> exportReport(@PathVariable String id) {
+        Optional<AnalysisHistory> record = analysisHistory.stream()
+            .filter(r -> r.getId().equals(id))
+            .findFirst();
+        
+        if (record.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        AnalysisHistory r = record.get();
+        String report = generateJsonReport(r);
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentDispositionFormData("attachment", 
+            "codemirror-report-" + id + ".json");
+        
+        return new ResponseEntity<>(report, headers, HttpStatus.OK);
+    }
+
+    private String generateJsonReport(AnalysisHistory record) {
+        return String.format("""
+            {
+              "report": {
+                "id": "%s",
+                "timestamp": "%s",
+                "language": "%s",
+                "qualityScore": %d,
+                "securityScore": %d,
+                "status": "%s",
+                "issues": %s,
+                "securityIssues": %s,
+                "suggestions": %s,
+                "codePreview": "%s"
+              }
+            }
+            """,
+            record.getId(),
+            record.getTimestamp(),
+            record.getLanguage(),
+            record.getQualityScore(),
+            record.getSecurityScore(),
+            record.getStatus(),
+            formatList(record.getIssues()),
+            formatList(record.getSecurityIssues()),
+            formatList(record.getSuggestions()),
+            record.getCode().replace("\"", "\\\"").substring(0, Math.min(record.getCode().length(), 500))
+        );
+    }
+
+    private String formatList(List<String> list) {
+        if (list == null || list.isEmpty()) {
+            return "[]";
+        }
+        return "[\"" + String.join("\", \"", list) + "\"]";
+    }
+
+    // ============================================================
+    // INNER CLASS: AnalysisHistory
+    // ============================================================
+    public static class AnalysisHistory {
+        private String id;
+        private String sessionId;
+        private String language;
+        private String code;
+        private String timestamp;
+        private int qualityScore;
+        private int securityScore;
+        private List<String> issues;
+        private List<String> securityIssues;
+        private List<String> suggestions;
+        private String status;
+
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+        public String getSessionId() { return sessionId; }
+        public void setSessionId(String sessionId) { this.sessionId = sessionId; }
+        public String getLanguage() { return language; }
+        public void setLanguage(String language) { this.language = language; }
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
+        public String getTimestamp() { return timestamp; }
+        public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+        public int getQualityScore() { return qualityScore; }
+        public void setQualityScore(int qualityScore) { this.qualityScore = qualityScore; }
+        public int getSecurityScore() { return securityScore; }
+        public void setSecurityScore(int securityScore) { this.securityScore = securityScore; }
+        public List<String> getIssues() { return issues; }
+        public void setIssues(List<String> issues) { this.issues = issues; }
+        public List<String> getSecurityIssues() { return securityIssues; }
+        public void setSecurityIssues(List<String> securityIssues) { this.securityIssues = securityIssues; }
+        public List<String> getSuggestions() { return suggestions; }
+        public void setSuggestions(List<String> suggestions) { this.suggestions = suggestions; }
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
     }
 }
